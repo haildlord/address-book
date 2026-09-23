@@ -14,7 +14,14 @@
 	"observability": {
 		"enabled": true
 	},
-	"upload_source_maps": true
+	"upload_source_maps": true,
+		"d1_databases": [
+		  {
+			"binding": "DB",
+			"database_name": "database-address-book",
+			"database_id": "6f6a3b36-8e8a-4805-b46b-9c23c63f6021"
+		  }
+		]
 	/**
 	 * Smart Placement
 	 * https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement
