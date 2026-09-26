@@ -1,9 +1,49 @@
 import { Hono } from "hono";
+import { cors } from "hono/cors";
+import { logger } from "hono/logger";
+import { HTTPException } from "hono/http-exception";
+import { AppError } from "./utility/AppError";
+import contacts from "./routes/contacts";
+import verify from "./routes/verify";
+import pda from "./routes/pda";
 
 const app = new Hono<{ Bindings: Env }>();
 
-app.get("/message", (c) => {
-  return c.text("Hello Hono!");
+app.use(logger());
+app.use("/api/*", cors());
+
+// -------------------------------------------------------------
+// Routes
+// -------------------------------------------------------------
+const api = new Hono<{ Bindings: Env }>();
+
+api.get("/", (c) => c.json({ success: true, message: "Welcome to Address Book API" }));
+api.get("/health", (c) => c.json({ status: "ok", time: new Date().toISOString() }));
+api.route("/contacts", contacts);
+api.route("/verify-ownership", verify);
+api.route("/derive-pda", pda);
+
+app.route("/api", api);
+
+// -------------------------------------------------------------
+// Global Error Handler
+// -------------------------------------------------------------
+app.onError((err, c) => {
+  const isHttp = err instanceof HTTPException;
+  const status = isHttp ? err.status : 500;
+  const message = isHttp ? err.message : "Internal Server Error";
+  const details = err instanceof AppError ? err.details : undefined;
+
+  if (!isHttp) console.error("Unhandled Error:", err);
+
+  return c.json({ success: false, message, ...(details ? { details } : {}) }, status);
 });
+
+// -------------------------------------------------------------
+// 404 Not Found Handler
+// -------------------------------------------------------------
+app.notFound((c) =>
+  c.json({ success: false, message: `Resource not found: ${c.req.method} ${c.req.path}` }, 404),
+);
 
 export default app;
